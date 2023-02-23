@@ -1,0 +1,19 @@
+{
+  "name": "game-workshop",
+  "version": "1.0.0",
+  "description": "",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "parcel": "^2.8.3",
+    "phaser": "^3.55.2"
+  },
+  "devDependencies": {
+    "parcel-reporter-static-files-copy": "^1.5.0"
+  }
+}

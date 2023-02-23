@@ -1,0 +1,5 @@
+const frames = require('./static/idle.json')
+const path = require('path')
+const fs = require('fs')
+const renamed = frames.frames.map((frame, index) => Object.assign(frame, {filename: `angel_${index < 10 ? "0" : ""}${index}.png`}))
+fs.writeFileSync(path.join(__dirname, "static", "idle_renamed.json"), JSON.stringify({...frames, frames: renamed}))
