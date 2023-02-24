@@ -5,7 +5,8 @@
   "source": "src/index.html",
   "scripts": {
     "start": "parcel",
-    "build": "parcel build"
+    "build": "parcel build",
+    "rename": "node rename.js"
   },
   "author": "",
   "license": "ISC",
