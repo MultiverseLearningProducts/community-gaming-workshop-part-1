@@ -76,8 +76,8 @@ new Phaser.Game({
     height: 12 * 64,
     backgroundColor: '#888',
     physics: {
-        default: 'arcade',
-        arcade: {
+        default: 'matter',
+        matter: {
             gravity: { y: 0 },
             debug: false
         }
@@ -228,3 +228,135 @@ Here is the initial config
 
 To create a world that our player can start to explore I have been using a free program called [Tiled](https://www.mapeditor.org/). This is were we can design our level, the world for our character to explore. Download yourself a copy and find a 2D tileset to start working with. This is what I'm using.
 
+* [https://brullov.itch.io/oak-woods](https://brullov.itch.io/oak-woods)
+* [https://anokolisa.itch.io/moon-graveyard](https://anokolisa.itch.io/moon-graveyard)
+
+Look at the tile size for the artwork you have downloaded. These packs are 32 x 32. When you open Tiled create a new map and set the tile size to match your artpack, and decide the size of map you want to create. I'm creating a long level so 72 tiles wide and 12 tiles high.
+
+![the settings in Tiled for a new map](https://user-images.githubusercontent.com/4499581/221217536-4d70fa90-b0f5-4564-91b0-322b8a7a5ce8.png)
+
+Now we are ready to start building our world in the form of a tiled map. Your tileset will give you pieces of artwork that you can piece together like a jigsaw puzzle. Use layers to seperate elements in your design, you will end up importing the map layer by layer in your code.
+
+![Tiled interface labeled](https://user-images.githubusercontent.com/4499581/221217271-ed5d0faa-2f47-45fd-81fe-c8c774eeb0f9.jpg)
+
+Now, pop on some tunes and get creative!
+
+![working in Tiled animation](https://user-images.githubusercontent.com/4499581/221853024-8cefa5d7-4faf-4813-aa85-d6e143251535.gif)
+
+When you are done or done enough to start testing your map goto __File -> Export As -> filename.json__ and export as a json file, you need to serve the file to your frontend code so save it into your _public_ folder or in this project it will go in the `static` folder. Any tileset artwork also needs to be served to your frontend and also needs to be in the `static` folder.
+
+## Import the tilemap
+
+We need both the json mapping and the artwork. We load these in the preload function, then we'll create the `map` instance and then add all the layers one by one. Below is an example of the preload function I needed. Can you spot the Tiled json file being loaded?
+
+```javascript
+function preload () {
+    this.load.atlas('idle', '/idle.png', '/idle.json')
+    this.load.atlas('move', '/move.png', '/move.json')
+    this.load.tilemapTiledJSON('tilemap', '/moon-level.json')
+    this.load.image('bg0', '/tileset_artwork/Background_0.png')
+    this.load.image('bg1', '/tileset_artwork/Background_1.png')
+    this.load.image('bg_brush', '/tileset_artwork/brush.png')
+    this.load.image('bg_grass_1', '/tileset_artwork/Grass_background_1.png')
+    this.load.image('bg_grass_2', '/tileset_artwork/Grass_background_2.png')
+    this.load.image('bg_tiles', '/tileset_artwork/Tiles.png')
+}
+```
+In the create function we will make our tilemap it's quite fun to have a look at the generated json, you should be able to guess whats going on behind the scenes in the phaser code to join the artwork with our json map.
+```javascript
+    const map = this.make.tilemap({key: 'tilemap'})
+    
+    // 'Background_0' comes from the moon-level.json - 'bg0' is my label set in the preload function
+    const bg1 = map.addTilesetImage('Background_0', 'bg0')
+    const bgFence = map.addTilesetImage('Background_1', 'bg1')
+    const bush = map.addTilesetImage('brush', 'bg_brush')
+    const grass_1 = map.addTilesetImage('Grass_background_1', 'bg_grass_1')
+    const grass_2 = map.addTilesetImage('Grass_background_2', 'bg_grass_2')
+    const tiles = map.addTilesetImage('Tiles', 'bg_tiles')
+    // The arrays are all the art sheets a layer needs
+    map.createLayer('Moon-sky', [bg1], 0, 0)
+    map.createLayer('Bg-fence', [bg1, bgFence], 0, 0)
+    map.createLayer('bush', [bush, grass_1, grass_2, tiles], 0, 0)
+    map.createLayer('path', [tiles], 0, 0)
+    map.createLayer('foreground-dressing', [bgFence, bush, grass_1, grass_2, tiles], 0, 0)
+```
+The code above is in three stages. 
+
+1. Create the tilemap instance (from the json)
+1. Attach the artwork files to the json map
+1. Now add the layers to the game window with `createLayer`
+
+The `0, 0` in `createLayer` is the x and y coordinate to position the layer. Now you should see your Angel character rendered along with the tilemap. The feeling of our world is coming together. The final step for this workshop is to start connecting these 2 things together, the world and the character.
+
+## Collision and occlusion
+
+To stop the character falling through the world we need to create obstructive contact or cause the character to collide and stop on the path. For this I'm going back to the Tiled map and going to create not a tiled layer by an object layer. On this object layer we are going to create an invisible polygon (multi sided shape) that will define areas our character will be obstructed by.
+
+![polygon tool](https://user-images.githubusercontent.com/4499581/221908252-17144325-6e7a-4c0f-9fd3-efc48a7c9803.png)
+
+Use the polygon tool to click and create a shape. Click on the original point to complete the polygon. In the properties section (top left hand corner) give the shape a name to reference in your code later.
+
+![polygon in Tiled](https://user-images.githubusercontent.com/4499581/221908291-cccfa828-b075-43e7-bdfe-25743959cb81.png)
+
+Save the updated tilemap, re export as json. Now you can bring this polygon shape into your game code. First we'll find the object we just name (using it's name) then reformat the line data from this:
+```javascript
+[
+    {
+        "x":0,
+        "y":0
+    }, 
+    {
+        "x":556.655665566557,
+        "y":4.40044004400443
+    }, 
+    {
+        "x":556.655665566557,
+        "y":-125.412541254125
+    }
+]
+```
+To data that looks like this:
+```javascript
+"0 0 556.655665566557 4.40044004400443 556.655665566557 -125.412541254125"
+```
+That what `coords` ends up being a string of __x, y__ values separated by spaces.
+```javascript
+    const platformOcclusion = map.findObject('occlusions', obj => obj.name === 'platform')
+    const coords = platformOcclusion.polygon.map(({x, y}) => ([x, y])).flat().join(" ")
+
+    const platformPolygon = this.add.polygon(platformOcclusion.x, platformOcclusion.y, coords, 0xff66ff, 0.2).setOrigin(0, 0)
+    this.matter.add.gameObject(platformPolygon, {
+        isStatic: true,
+        shape: {
+            type: 'fromVerts', 
+            verts: coords,
+            flagInternal: true
+        }
+    }).setVisible(false).setPosition(
+        platformPolygon.x + platformPolygon.body.centerOffset.x,
+        platformPolygon.y + platformPolygon.body.centerOffset.y
+    )
+```
+Reading the code we get our data from the tilemap, reformat it, create a polygon shape, then we attach matter physics to that shape by using it to create a `gameObject`. The chaining functions render the shape invisible, and adjust it's position because the center of the gameObject is calculated by center of mass not geometrically. So we overide that and position the shape as if the origin was it's top left-hand corner.
+
+## Now we need to jump
+
+Can you update the character to jump? Now we have obstacles we can climb onto! You can be more fancy and add the jumping animation that is in the artwork if you want to. Just for functionality I'm going to just listen for the up arrow key and add some vertical velocity in the update function
+
+```javascript
+    if(this.cursors.up.isDown) {
+        this.angel.setVelocityY(-12)
+    }
+```
+
+## Finally cameras
+
+The level is longer that the viewport, so we can travel into the map to manage that we just need to get the camera to follow the character as we move, and offset it so the map does not appear to moved when when the camera focuses on the character. Add these 2 lines to the create function. You might need to adjust the bounds of the world depending on your map's width and height.
+
+```javascript
+    this.cameras.main.setBounds(0, 0, 64 * 72, 64 * 12)
+    this.cameras.main.startFollow(this.angel)
+```
+## Summary
+
+We have built a game from scratch. A playable character and a world for them to explore. Finally we have introduced collision and cameras. These tricks enable us to establish a world. In the next workshop we will need to think more about game state and starting to manage more intricate interactions.
