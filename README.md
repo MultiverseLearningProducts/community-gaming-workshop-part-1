@@ -1,15 +1,15 @@
-https://www.codeandweb.com/free-sprite-sheet-packer
+# Multiverse Code a Game Workshop - Part I
 
 ## Set up the project
 
 ```
-npm i phaser
+npm init && npm i phaser
 ```
 And then the build tools...
 ```sh
 npm i -D parcel parcel-reporter-static-files-copy
 ```
-make a `static` folder for assets and then in `.parcelrc` add
+make a `static` folder for assets and then create a `.parcelrc` file in the root of your project folder and add the following into it.
 
 ```json
 {
@@ -160,7 +160,7 @@ Can you figure out how to do this from the steps you have already seen?
 You should be able to add the other animations, i.e. 'right-walk'. Below is the code to initialise the keyboard listeners. To apply velocity the sprite needs to be attached to the physics engine. Instead of `this.add.sprite(100, 200, 'angel').setScale(0.25)`. You will need to use `this.physics.add.sprite(100, 200, 'angel').setScale(0.25)` see there we are adding the sprite to the `this` context of the game via the `physics` engine. Now we'll be able to apply forces to our sprite.
 ```javascript
 this.cursors = this.input.keyboard.createCursorKeys()
-this.angel = this.physics.add.sprite(100, 200, 'angel').setScale(0.25)
+this.angel = this.matter.add.sprite(100, 200, 'angel').setScale(0.25)
 ```
 
 ## Update
@@ -186,7 +186,7 @@ Do you think you can make her jump? then slash, throw etc
 
 Finally before leaving the character lets think a little more about the container of the world in which she lives. We can apply forces to our character that simulate gravity and this can help the feeling of being in a more realistic environment. In the game config can you see the `debug` flag. At the moment it is set to be false, can you switch it to be true?
 
-Now you can see the physics acting on the sprite. We are going to take a moment to appreciate a few things now about the bounding box around a sprite and the way that physics acts on bodies in the world. We can start by applying gravity to the scene. In the game config, give the `y` value something like 333.
+Now you can see the physics acting on the sprite. We are going to take a moment to appreciate a few things now about the bounding box around a sprite and the way that physics acts on bodies in the world. We can start by applying gravity to the scene. In the game config, give the `y` value something like 5.
 
 ```javascript
 new Phaser.Game({
@@ -197,32 +197,24 @@ new Phaser.Game({
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 333 },
+            gravity: { y: 5 },
             debug: true
         }
     },
     scene: { preload, create, update }
 })
 ```
-Now our playable character just falls out of the world. For now we can bound her in by adding `setCollideWorldBounds(true)` to the character. In the table below I'm trying to communicate to you the ways setOrigin and setSize effect the physical positioning of the character and the way it will effect the collide and interaction with other physical bodies in the world.
+Now our playable character just falls out of the world. For now we can bound her in by adding `this.matter.world.setBounds(0, 0, 16 * 64, 12 * 64)` to the create function. In the table below I'm trying to communicate to you the ways setOrigin and setSize effect the physical positioning of the character and the way it will effect the collide and interaction with other physical bodies in the world.
 
 Here is the initial config
 
 ```javascript
     this.angel = this.physics.add.sprite(100, 200, 'idle')
         .setScale(0.25)
-        .setSize(300, 600)
-        .setOrigin(.5, 1)
-        .setCollideWorldBounds(true, 0.2, 0.2)
-```
+        .setRectangle(120,150)
 
-|Effect|Properties|
-|:-----|:---------|
-![image of physics bounding box](https://user-images.githubusercontent.com/4499581/220971625-252867b8-b5c0-409d-94bc-29b2bbcd2809.png)|setSize(100,100)<br/>setOrigin(0.5,0.5)
-![image of physics bounding box](https://user-images.githubusercontent.com/4499581/220971632-bf268925-3adb-49c4-be26-079af7d00144.png)|setSize(150,100)<br/>setOrigin(  0,0.5)
-![image of physics bounding box](https://user-images.githubusercontent.com/4499581/220971636-6c3aa034-a861-4789-a8bc-29d33887305b.png)|setSize(150,150)<br/>setOrigin(  1, 1)
-![image of physics bounding box](https://user-images.githubusercontent.com/4499581/220971639-416440de-11a6-4273-9d8d-b67a517f62b0.png)|setSize(300,600)<br/>setOrigin(  1, 1)
-![image of physics bounding box](https://user-images.githubusercontent.com/4499581/220971644-7664ba13-f0a3-4b4e-ab54-c609fd0bcc42.png)|setSize(300,600)<br/>setOrigin(0.5,0.5)
+    this.matter.world.setBounds(0, 0, 16 * 64, 12 * 64)
+```
 
 ## Tiled
 
